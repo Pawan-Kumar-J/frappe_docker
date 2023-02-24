@@ -1,0 +1,82 @@
+version: "3.7"
+services:
+  mariadb:
+    image: mariadb:10.6
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed # Temporary fix for MariaDB 10.6
+    environment:
+      MYSQL_ROOT_PASSWORD: 123
+    volumes:
+      - mariadb-data:/var/lib/mysql
+
+  # Enable PostgreSQL only if you use it, see development/README.md for more information.
+  # postgresql:
+  #   image: postgres:11.8
+  #   environment:
+  #     POSTGRES_PASSWORD: 123
+  #   volumes:
+  #     - postgresql-data:/var/lib/postgresql/data
+
+  redis-cache:
+    image: redis:alpine
+
+  redis-queue:
+    image: redis:alpine
+
+  redis-socketio:
+    image: redis:alpine
+
+  frappe:
+    image: frappe/bench:latest
+    command: >
+      sh -c "
+        echo 'Start' 
+        echo 'Initializing bench' 
+        if test -d frappe-bench ;
+        then
+          cd frappe-bench;
+          echo 'Exist starting the project'
+          bench start;
+          sleep infinity;
+        else 
+          echo 'Does not exist';
+        fi 
+        echo 'came here'
+        bench init --skip-redis-config-generation --frappe-branch version-14 frappe-bench 
+        cd frappe-bench 
+        echo 'Setting configurations' 
+        bench set-config -g db_host mariadb 
+        bench set-config -g redis_cache redis://redis-cache:6379 
+        bench set-config -g redis_queue redis://redis-queue:6379 
+        bench set-config -g redis_socketio redis://redis-socketio:6379 
+        echo 'Creating new site' 
+        bench new-site mysite.localhost --mariadb-root-password 123 --admin-password admin --no-mariadb-socket --db-name abcd 
+        echo 'Setting configurations' 
+        bench --site mysite.localhost set-config developer_mode 1 
+        bench --site mysite.localhost clear-cache 
+        echo 'Insatalling sites' 
+        bench get-app --branch version-14 --resolve-deps erpnext 
+        echo 'Insall app in the site' 
+        bench --site mysite.localhost install-app erpnext 
+        echo 'Start the site' 
+        bench use mysite.localhost 
+        bench start 
+        sleep infinity"
+
+    environment:
+      - SHELL=/bin/bash
+    volumes:
+      - ..:/workspace:cached
+      # Enable if you require git cloning
+      # - ${HOME}/.ssh:/home/frappe/.ssh
+    working_dir: /workspace
+    ports:
+      - 8000-8005:8000-8005
+      - 9000-9005:9000-9005
+
+volumes:
+  mariadb-data:
+  postgresql-data:
