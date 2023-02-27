@@ -40,7 +40,7 @@ services:
           cd frappe-bench;
           echo 'Exist starting the project'
           bench start;
-          sleep infinity;
+          #sleep infinity;
         else 
           echo 'Does not exist';
         fi 
@@ -62,9 +62,9 @@ services:
         echo 'Insall app in the site' 
         bench --site mysite.localhost install-app erpnext 
         echo 'Start the site' 
-        bench use mysite.localhost 
-        bench start 
-        sleep infinity"
+        bench use mysite.localhost" 
+        #bench start 
+        #sleep infinity"
     environment:
       - SHELL=/bin/bash
     volumes:
