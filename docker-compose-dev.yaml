@@ -61,7 +61,9 @@ services:
         echo 'Insall app in the site' 
         bench --site mysite.localhost install-app erpnext 
         echo 'Start the site' 
-        bench use mysite.localhost"
+        bench use mysite.localhost
+        bench start
+        "
     environment:
       - SHELL=/bin/bash
     volumes:
